@@ -5,7 +5,7 @@ import PDFKit
 struct ModifiedPdfView: View {
     @ObservedObject var viewModel: MainViewModel
     @State private var showFontPicker = false
-    @State private var selectedFont: String = "Helvetica"  // 기본 폰트 설정
+    @State private var selectedFont: String = ""  // 기본 폰트 설정
     @State private var temporaryURL: URL? = nil
     
     private let fonts = ["Helvetica", "Courier", "MarkerFelt-Thin", "Times New Roman", "Arial"]
@@ -13,32 +13,35 @@ struct ModifiedPdfView: View {
     var body: some View {
         ScrollView{
             VStack {
-                Text("변환된 PDF 미리보기")
-                    .font(.headline)
-                    .padding()
                 
+                Spacer()
+
                 HStack{
                     Button(action: {
                         showFontPicker.toggle()
                     }) {
-                        Text("선택한 폰트: \(selectedFont)")
+                        Text("Selected Font: \(selectedFont)")
                             .font(.custom(selectedFont, size: 20))
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(10)
+                            .foregroundStyle(.black)
                     }
-                    .padding()
                     
-                    Button("폰트 변경") {
-                        viewModel.createNewPDFWithModifiedFont(fontName: selectedFont)
-                        createTemporaryURL()
+                    Button("Change Font") {
+                        if selectedFont != "" {
+                            viewModel.createNewPDFWithModifiedFont(fontName: selectedFont)
+                            createTemporaryURL()
+                        }
                     }
                     .padding()
+                    .foregroundStyle(.white)
+                    .background(.cyan)
+                    .cornerRadius(10)
                 }
+                .padding(.horizontal, 10)
                 
                 if viewModel.isProcessing {
-                    ProgressView("PDF 생성 중...")
+                    ProgressView("Generating PDF...")
                         .padding()
                 }
                 
@@ -49,15 +52,21 @@ struct ModifiedPdfView: View {
                     
                     if let url = temporaryURL {
                         ShareLink(item: url) {
-                            Text("변환된 PDF 다운로드")
+                            Text("Download Converted PDF")
                         }
                         .padding()
                     }
                 }
+                
+                Spacer()
             }
         }
+        .navigationTitle("Preview of Converted PDF")
         .sheet(isPresented: $showFontPicker) {  // 폰트 선택 바텀시트
             FontPickerView(selectedFont: $selectedFont, showFontPicker: $showFontPicker, fonts: fonts)
+        }
+        .onAppear{
+            viewModel.modifiedPdfDocument = nil
         }
     }
     

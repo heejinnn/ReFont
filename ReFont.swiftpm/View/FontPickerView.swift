@@ -23,6 +23,7 @@ struct FontPickerView: View {
                                 .font(.custom(font, size: 20))
                                 .padding()
                                 .frame(maxWidth: .infinity)
+                                .foregroundStyle(.black)
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
                         }
@@ -35,6 +36,7 @@ struct FontPickerView: View {
             Button("닫기") {
                 showFontPicker = false
             }
+            .foregroundStyle(.black)
             .padding()
         }
         .padding()

@@ -9,15 +9,17 @@ struct ReFontMainView: View {
     var body: some View {
         NavigationStack {
             ScrollView{
-                VStack {
+                VStack(spacing: 10) {
+                    
                     Text("Transform Your PDF Fonts")
                         .font(.title)
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 10)
                     
                     Text("Upload your PDF and choose from a variety of fonts to give your document a fresh look.")
                         .font(.headline)
                         .foregroundStyle(.gray)
-                        .padding(.vertical, 5)
+//                        .padding(.vertical, 5)
+                        .padding(.horizontal, 10)
                     
                     Button(action: {
                         showDocumentPicker = true
@@ -37,9 +39,12 @@ struct ReFontMainView: View {
                     if let pdfDocument = viewModel.pdfDocument {
                         PdfKitView(document: pdfDocument)
                             .frame(height: 500)
-                        NavigationLink("변환된 PDF 보기", destination: ModifiedPdfView(viewModel: viewModel))
+                        NavigationLink("View Converted PDF", destination: ModifiedPdfView(viewModel: viewModel))
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.black)
                         .padding()
-                    }   
+                        
+                    }
                 }
             }
             .sheet(isPresented: $showDocumentPicker) {
