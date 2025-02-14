@@ -4,10 +4,11 @@ import PDFKit
 import Vision
 
 class MainViewModel: ObservableObject {
-    @Published var recognizedText: String = "PDF에서 추출한 텍스트가 여기에 표시됩니다."
     @Published var pdfDocument: PDFDocument?
     @Published var pdfURL: URL?
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
+    @Published var modifiedPdfDocument: PDFDocument?
+    @Published var isProcessing: Bool = false
     
     func loadPDF(from url: URL) {
         let _ = url.startAccessingSecurityScopedResource()
@@ -52,7 +53,7 @@ class MainViewModel: ObservableObject {
             
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-
+            
             do {
                 try VNImageRequestHandler(cgImage: pageImage.cgImage!, options: [:])
                     .perform([request])
@@ -61,21 +62,26 @@ class MainViewModel: ObservableObject {
             }
         }
     }
-
+    
     func createNewPDFWithModifiedFont(fontName: String) {
-        guard let document = pdfDocument else { return }
-
+        isProcessing = true
+        
+        guard let document = pdfDocument else {
+            isProcessing = false
+            return
+        }
+        
         let newDocument = PDFDocument()
-
+        
         for pageIndex in 0..<document.pageCount {
             guard let originalPage = document.page(at: pageIndex) else { continue }
-
+            
             let pageRect = originalPage.bounds(for: .mediaBox)
             let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
-
+            
             let pdfData = renderer.pdfData { context in
                 context.beginPage()
-
+                
                 if let pageRef = originalPage.pageRef,
                    let cgContext = UIGraphicsGetCurrentContext() {
                     cgContext.saveGState()
@@ -84,12 +90,12 @@ class MainViewModel: ObservableObject {
                     cgContext.drawPDFPage(pageRef)
                     cgContext.restoreGState()
                 }
-
+                
                 let pageElements = extractedElements.filter { $0.page == pageIndex }
                 for element in pageElements {
                     let textHeight = element.frame.height
                     let fontSize = max(textHeight * 0.8, 10)
-
+                    
                     let attributedText = NSAttributedString(
                         string: element.text,
                         attributes: [
@@ -97,24 +103,25 @@ class MainViewModel: ObservableObject {
                             .foregroundColor: UIColor.black
                         ]
                     )
-
+                    
                     context.cgContext.setFillColor(UIColor.white.cgColor)
                     context.cgContext.fill(element.frame)
-
+                    
                     attributedText.draw(in: element.frame)
                 }
             }
-
+            
             if let newPDFDocument = PDFDocument(data: pdfData),
                let newPage = newPDFDocument.page(at: 0) {
                 newDocument.insert(newPage, at: pageIndex)
             }
         }
-
+        
         let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModifiedFont.pdf")
         newDocument.write(to: outputURL)
         
-        self.pdfURL = outputURL
-        print("✅ 새로운 PDF 저장 완료: \(outputURL)")
+        self.modifiedPdfDocument = PDFDocument(url: outputURL)
+        self.isProcessing = false
+        
     }
 }
