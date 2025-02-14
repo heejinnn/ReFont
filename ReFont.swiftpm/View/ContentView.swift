@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showDocumentPicker = false
     @State private var pdfURL: URL?
     @State private var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
+    @State private var showModifiedPdf = false
     
     var body: some View {
         VStack {
@@ -31,6 +32,14 @@ struct ContentView: View {
                     Text("변환된 PDF 다운로드")
                 }
                 .padding()
+                
+                Button("변환된 PDF 보기") {
+                    showModifiedPdf = true
+                }
+                .padding()
+                .sheet(isPresented: $showModifiedPdf) {
+                    ModifiedPdfView(pdfURL: pdfURL)
+                }
             }
         }
         .sheet(isPresented: $showDocumentPicker) {
