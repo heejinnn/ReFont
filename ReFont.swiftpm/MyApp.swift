@@ -10,7 +10,7 @@ struct MyApp: App {
                 SplashView()
                     .onAppear {
                         // 2초 후에 ReFontMainView로 전환
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                             withAnimation {
                                 showSplash = false
                             }

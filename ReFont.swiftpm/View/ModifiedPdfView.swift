@@ -5,67 +5,94 @@ import PDFKit
 struct ModifiedPdfView: View {
     @ObservedObject var viewModel: MainViewModel
     @State private var showFontPicker = false
-    @State private var selectedFont: String = ""  // 기본 폰트 설정
+    @State private var selectedFont: String = ""
     @State private var temporaryURL: URL? = nil
-    
-    private let fonts = ["Helvetica", "Courier", "MarkerFelt-Thin", "Times New Roman", "Arial"]
-    
-    var body: some View {
-        ScrollView{
-            VStack {
-                
-                Spacer()
 
-                HStack{
-                    Button(action: {
-                        showFontPicker.toggle()
-                    }) {
-                        Text("Selected Font: \(selectedFont)")
-                            .font(.custom(selectedFont, size: 20))
+    private let fonts = ["Helvetica", "Courier", "MarkerFelt-Thin", "Times New Roman", "SnellRoundhand", "BradleyHandITCTT-Bold"]
+
+    var body: some View {
+        VStack {
+            Text("Convert Your PDF")
+                .font(.title)
+                .fontWeight(.bold)
+                .padding(.vertical, 10)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    // 폰트 선택 섹션
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Choose a Font")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.black)
+                        
+                        Button(action: { showFontPicker.toggle() }) {
+                            HStack {
+                                Text("Selected Font: \(selectedFont.isEmpty ? "None" : selectedFont)")
+                                    .font(.custom(selectedFont.isEmpty ? "System" : selectedFont, size: 16))
+                                    .foregroundColor(.black)
+                                Spacer()
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(.gray)
+                            }
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .foregroundStyle(.black)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(15)
+                        }
+
+                        Button(action: {
+                            if !selectedFont.isEmpty {
+                                viewModel.createNewPDFWithModifiedFont(fontName: selectedFont)
+                                createTemporaryURL()
+                            }
+                        }) {
+                            Text("Apply Font")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(selectedFont.isEmpty ? Color.gray : Color.cyan)
+                                .cornerRadius(15)
+                                .shadow(radius: 3)
+                        }
+                        .disabled(selectedFont.isEmpty)
                     }
-                    
-                    Button("Change Font") {
-                        if selectedFont != "" {
-                            viewModel.createNewPDFWithModifiedFont(fontName: selectedFont)
-                            createTemporaryURL()
+                    .padding(.horizontal, 20)
+
+                    // 변환된 PDF 미리보기
+                    if let modifiedDocument = viewModel.modifiedPdfDocument {
+                        PdfKitView(document: modifiedDocument)
+                            .frame(height: 550)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 10)
+                            .shadow(radius: 3)
+                            .transition(.opacity)
+
+                        // 다운로드 버튼
+                        if let url = temporaryURL {
+                            ShareLink(item: url) {
+                                Text("Download Converted PDF")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.cyan)
+                                    .cornerRadius(15)
+                                    .shadow(radius: 3)
+                            }
+                            .padding(.horizontal, 20)
                         }
                     }
-                    .padding()
-                    .foregroundStyle(.white)
-                    .background(.cyan)
-                    .cornerRadius(10)
                 }
-                .padding(.horizontal, 10)
-                
-                if viewModel.isProcessing {
-                    ProgressView("Generating PDF...")
-                        .padding()
-                }
-                
-                if let modifiedDocument = viewModel.modifiedPdfDocument {
-                    PdfKitView(document: modifiedDocument)
-                        .frame(height: 500)
-                        .transition(.opacity)
-                    
-                    if let url = temporaryURL {
-                        ShareLink(item: url) {
-                            Text("Download Converted PDF")
-                        }
-                        .padding()
-                    }
-                }
-                
-                Spacer()
+                .padding(.vertical, 20)
             }
+
+            Spacer()
         }
-        .navigationTitle("Preview of Converted PDF")
-        .sheet(isPresented: $showFontPicker) {  // 폰트 선택 바텀시트
+        .sheet(isPresented: $showFontPicker) {
             FontPickerView(selectedFont: $selectedFont, showFontPicker: $showFontPicker, fonts: fonts)
         }
-        .onAppear{
+        .onAppear {
             viewModel.modifiedPdfDocument = nil
         }
     }

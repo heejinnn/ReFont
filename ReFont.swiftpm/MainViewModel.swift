@@ -8,8 +8,7 @@ class MainViewModel: ObservableObject {
     @Published var pdfURL: URL?
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
     @Published var modifiedPdfDocument: PDFDocument?
-    @Published var isProcessing: Bool = false
-    
+
     func loadPDF(from url: URL) {
         let _ = url.startAccessingSecurityScopedResource()
         defer { url.stopAccessingSecurityScopedResource() }
@@ -64,12 +63,8 @@ class MainViewModel: ObservableObject {
     }
     
     func createNewPDFWithModifiedFont(fontName: String) {
-        isProcessing = true
         
-        guard let document = pdfDocument else {
-            isProcessing = false
-            return
-        }
+        guard let document = pdfDocument else {return}
         
         let newDocument = PDFDocument()
         
@@ -121,7 +116,5 @@ class MainViewModel: ObservableObject {
         newDocument.write(to: outputURL)
         
         self.modifiedPdfDocument = PDFDocument(url: outputURL)
-        self.isProcessing = false
-        
     }
 }

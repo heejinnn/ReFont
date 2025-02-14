@@ -31,7 +31,7 @@ struct FontPickerView: View {
                     }
                 }
             }
-            .frame(maxHeight: 300)
+            .frame(maxHeight: 350)
             
             Button("닫기") {
                 showFontPicker = false
