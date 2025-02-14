@@ -13,6 +13,11 @@ struct ModifiedPdfView: View {
             
             PdfKitView(document: PDFDocument(url: pdfURL)!)
                 .edgesIgnoringSafeArea(.all)
+            
+            ShareLink(item: pdfURL) {
+                Text("변환된 PDF 다운로드")
+            }
+            .padding()
         }
     }
 }
