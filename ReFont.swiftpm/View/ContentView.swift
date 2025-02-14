@@ -111,22 +111,21 @@ struct ContentView: View {
             }
         }
     }
-
     
     private func createNewPDFWithModifiedFont() {
         guard let document = pdfDocument else { return }
-        
+
         let newDocument = PDFDocument()
-        
+
         for pageIndex in 0..<document.pageCount {
             guard let originalPage = document.page(at: pageIndex) else { continue }
-            
+
             let pageRect = originalPage.bounds(for: .mediaBox)
             let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
-            
+
             let pdfData = renderer.pdfData { context in
                 context.beginPage()
-                
+
                 // 원본 PDF 페이지 그리기
                 if let pageRef = originalPage.pageRef,
                    let cgContext = UIGraphicsGetCurrentContext() {
@@ -136,42 +135,44 @@ struct ContentView: View {
                     cgContext.drawPDFPage(pageRef)
                     cgContext.restoreGState()
                 }
-                
+
                 // 변경된 폰트 적용하여 텍스트 다시 그리기
                 let pageElements = extractedElements.filter { $0.page == pageIndex }
                 for element in pageElements {
+                    let textHeight = element.frame.height // 원본 텍스트 높이
+                    let fontSize = max(textHeight * 0.8, 10) // 최소 폰트 크기 10 유지
+                    
                     let attributedText = NSAttributedString(
                         string: element.text,
                         attributes: [
-                            .font: UIFont(name: "MarkerFelt-Thin", size: 18) ?? UIFont.systemFont(ofSize: 18),
+                            .font: UIFont(name: "MarkerFelt-Thin", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
                             .foregroundColor: UIColor.black
                         ]
                     )
-                    
+
                     // 기존 텍스트를 덮는 흰색 박스
                     context.cgContext.setFillColor(UIColor.white.cgColor)
                     context.cgContext.fill(element.frame)
-                    
+
                     // 새로운 폰트 적용된 텍스트 그리기
                     attributedText.draw(in: element.frame)
                 }
             }
-            
+
             // `PDFDocument`를 생성하여 데이터를 로드한 후, `PDFPage`를 가져오기
             if let newPDFDocument = PDFDocument(data: pdfData),
                let newPage = newPDFDocument.page(at: 0) {
                 newDocument.insert(newPage, at: pageIndex)
             }
         }
-        
+
         // 🔹 새로운 PDF 저장
         let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModifiedFont.pdf")
         newDocument.write(to: outputURL)
-        
+
         DispatchQueue.main.async {
             self.pdfURL = outputURL
             print("✅ 새로운 PDF 저장 완료: \(outputURL)")
         }
     }
-
 }
