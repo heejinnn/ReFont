@@ -62,7 +62,7 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    func createNewPDFWithModifiedFont(fontName: String) {
+    func createNewPDFWithModifiedFont(fontName: String, color: UIColor) {
         
         guard let document = pdfDocument else {return}
         
@@ -95,7 +95,7 @@ class MainViewModel: ObservableObject {
                         string: element.text,
                         attributes: [
                             .font: UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
-                            .foregroundColor: UIColor.black
+                            .foregroundColor: color
                         ]
                     )
                     

@@ -5,10 +5,10 @@ import PDFKit
 struct ModifiedPdfView: View {
     @ObservedObject var viewModel: MainViewModel
     @State private var showFontPicker = false
-    @State private var selectedFont: String = ""
+    @State private var showColorPicker = false
+    @State private var selectedFont: FontType? = nil
+    @State private var selectedColor: UIColor = .black
     @State private var temporaryURL: URL? = nil
-
-    private let fonts = ["Helvetica", "Courier", "MarkerFelt-Thin", "Times New Roman", "SnellRoundhand", "BradleyHandITCTT-Bold"]
 
     var body: some View {
         VStack {
@@ -21,41 +21,66 @@ struct ModifiedPdfView: View {
                 VStack(spacing: 20) {
                     // 폰트 선택 섹션
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Choose a Font")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.black)
                         
-                        Button(action: { showFontPicker.toggle() }) {
-                            HStack {
-                                Text("Selected Font: \(selectedFont.isEmpty ? "None" : selectedFont)")
-                                    .font(.custom(selectedFont.isEmpty ? "System" : selectedFont, size: 16))
-                                    .foregroundColor(.black)
-                                Spacer()
-                                Image(systemName: "chevron.down")
-                                    .foregroundColor(.gray)
+                        VStack{
+                            Text("Choose a Font")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.black)
+                            
+                            Button(action: { showFontPicker.toggle() }) {
+                                HStack {
+                                    Text("Selected Font: \(selectedFont?.displayName ?? "None")")
+                                        .font(.custom(selectedFont?.rawValue ?? "System", size: 16))
+                                        .foregroundStyle(.black)
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundStyle(.gray)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(15)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(15)
                         }
-
+                        
+                        VStack{
+                            Text("Choose a Color")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.black)
+                            
+                            Button(action: { showColorPicker.toggle() }) {
+                                HStack {
+                                    Text("Selected Color: \(colorName(color: selectedColor))")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(Color(selectedColor))
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundStyle(.gray)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(15)
+                            }
+                        }
+                        
                         Button(action: {
-                            if !selectedFont.isEmpty {
-                                viewModel.createNewPDFWithModifiedFont(fontName: selectedFont)
+                            if let font = selectedFont {
+                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor)
                                 createTemporaryURL()
                             }
                         }) {
                             Text("Apply Font")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(selectedFont.isEmpty ? Color.gray : Color.cyan)
+                                .background(selectedFont == nil ? Color.gray : Color.cyan)
+                            
                                 .cornerRadius(15)
                                 .shadow(radius: 3)
                         }
-                        .disabled(selectedFont.isEmpty)
+                        .disabled(selectedFont == nil)
                     }
                     .padding(.horizontal, 20)
 
@@ -73,7 +98,7 @@ struct ModifiedPdfView: View {
                             ShareLink(item: url) {
                                 Text("Download Converted PDF")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .padding()
                                     .frame(maxWidth: .infinity)
                                     .background(Color.cyan)
@@ -90,8 +115,12 @@ struct ModifiedPdfView: View {
             Spacer()
         }
         .sheet(isPresented: $showFontPicker) {
-            FontPickerView(selectedFont: $selectedFont, showFontPicker: $showFontPicker, fonts: fonts)
+            FontPickerView(selectedFont: $selectedFont, showFontPicker: $showFontPicker, fonts: FontType.allCases)
         }
+        .sheet(isPresented: $showColorPicker) {
+            ColorPickerView(selectedColor: $selectedColor, showColorPicker: $showColorPicker)
+        }
+        
         .onAppear {
             viewModel.modifiedPdfDocument = nil
         }
@@ -116,5 +145,10 @@ struct ModifiedPdfView: View {
         } catch {
             print("❌ Error creating temporary URL: \(error)")
         }
+    }
+    
+    private func colorName(color: UIColor) -> String{
+        let colorOption =  ColorOption(from: color)
+        return colorOption?.rawValue ?? "Black"
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct DocumentPicker: UIViewControllerRepresentable {
+struct DocumentPickerView: UIViewControllerRepresentable {
     var onPick: (URL) -> Void
     
     func makeCoordinator() -> Coordinator {

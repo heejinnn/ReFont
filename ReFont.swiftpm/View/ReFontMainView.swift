@@ -66,7 +66,7 @@ struct ReFontMainView: View {
             }
             .padding(.vertical, 20)
             .sheet(isPresented: $showDocumentPicker) {
-                DocumentPicker { url in
+                DocumentPickerView { url in
                     viewModel.loadPDF(from: url)
                 }
             }
