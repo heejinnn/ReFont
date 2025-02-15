@@ -49,7 +49,7 @@ class MainViewModel: ObservableObject {
                     }
                 }
             }
-            
+            request.revision = VNRecognizeTextRequestRevision1//최신 모델 사용
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
             
@@ -89,7 +89,21 @@ class MainViewModel: ObservableObject {
                 let pageElements = extractedElements.filter { $0.page == pageIndex }
                 for element in pageElements {
                     let textHeight = element.frame.height
-                    let fontSize = max(textHeight * 0.8, 10)
+                    var fontSize = max(textHeight * 0.8, 12)
+                    
+                    // 바운딩 렉트를 사용한 폰트 사이즈 조정
+                    let testString = element.text as NSString
+                    let testFont = UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
+                    let rect = testString.boundingRect(
+                        with: element.frame.size,
+                        options: .usesLineFragmentOrigin,
+                        attributes: [.font: testFont],
+                        context: nil
+                    )
+                    
+                    if rect.height > element.frame.height {
+                        fontSize *= element.frame.height / rect.height
+                    }
                     
                     let attributedText = NSAttributedString(
                         string: element.text,
