@@ -5,7 +5,6 @@ import Vision
 
 class MainViewModel: ObservableObject {
     @Published var pdfDocument: PDFDocument?
-    @Published var pdfURL: URL?
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
 
     func loadPDF(from url: URL) {
@@ -164,14 +163,29 @@ class MainViewModel: ObservableObject {
     /// Auto adjust font size
     private func adjustFontSizeToFit(_ element: (text: String, frame: CGRect, page: Int), fontName: String, fontSize: CGFloat) -> CGFloat {
         let testString = element.text as NSString
-        let testFont = UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
-        let rect = testString.boundingRect(
-            with: element.frame.size,
-            options: .usesLineFragmentOrigin,
-            attributes: [.font: testFont],
-            context: nil
-        )
+        var minFontSize: CGFloat = 10
+        var maxFontSize: CGFloat = fontSize
+        var bestFontSize: CGFloat = fontSize
         
-        return rect.height > element.frame.height ? fontSize * element.frame.height / rect.height : fontSize
+        while minFontSize <= maxFontSize {
+            let currentFontSize = (minFontSize + maxFontSize) / 2
+            let testFont = UIFont(name: fontName, size: currentFontSize) ?? UIFont.systemFont(ofSize: currentFontSize)
+            let rect = testString.boundingRect(
+                with: CGSize(width: element.frame.width, height: CGFloat.greatestFiniteMagnitude),
+                options: .usesLineFragmentOrigin,
+                attributes: [.font: testFont],
+                context: nil
+            )
+            
+            if rect.height > element.frame.height {
+                maxFontSize = currentFontSize - 0.5
+            } else {
+                bestFontSize = currentFontSize
+                minFontSize = currentFontSize + 0.5
+            }
+        }
+        
+        return bestFontSize
     }
+
 }
