@@ -1,11 +1,3 @@
-//
-//  SplashView.swift
-//  ReFont
-//
-//  Created by 최희진 on 2/15/25.
-//
-
-import SwiftUI
 
 import SwiftUI
 

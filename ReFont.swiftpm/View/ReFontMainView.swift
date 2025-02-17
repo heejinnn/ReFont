@@ -5,6 +5,7 @@ import Vision
 struct ReFontMainView: View {
     @StateObject private var viewModel = MainViewModel()
     @State private var showDocumentPicker = false
+    @State private var isLoading = false
     
     var body: some View {
         NavigationStack {
@@ -24,6 +25,13 @@ struct ReFontMainView: View {
                     
                     Button(action: {
                         showDocumentPicker = true
+                        isLoading = true
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            withAnimation {
+                                isLoading = false
+                            }
+                        }
                     }) {
                         Label("Upload Your PDF", systemImage: "square.and.arrow.up")
                             .font(.system(size: 16, weight: .semibold))
@@ -36,11 +44,12 @@ struct ReFontMainView: View {
                     }
                     .padding(.horizontal, 20)
 
-//                    if isLoading{
-//                        ProgressView("Loading PDF...")
-//                            .progressViewStyle(CircularProgressViewStyle())
-//                            .padding()
-//                    }
+                    if isLoading{
+                        ProgressView("Loading PDF...")
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .foregroundStyle(.gray)
+                            .padding()
+                    }
                     
                     if let pdfDocument = viewModel.pdfDocument {
                         PdfKitView(document: pdfDocument)

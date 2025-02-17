@@ -10,6 +10,7 @@ struct ModifiedPdfView: View {
     @State private var selectedColor: UIColor = .black
     @State private var temporaryURL: URL? = nil
     @State private var modifiedPdfDocument: PDFDocument?
+    @State private var includeOriginalLayout = true
 
     var body: some View {
         VStack {
@@ -21,9 +22,10 @@ struct ModifiedPdfView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // 폰트 선택 섹션
-                    VStack(alignment: .leading, spacing: 10) {
+                    
+                    VStack(alignment: .leading, spacing: 15) {
                         
+                        // Font selection section
                         VStack(alignment: .leading){
                             Text("Choose a Font")
                                 .font(.system(size: 20, weight: .bold))
@@ -45,6 +47,7 @@ struct ModifiedPdfView: View {
                             }
                         }
                         
+                        // Color selection section
                         VStack(alignment: .leading){
                             Text("Choose a Color")
                                 .font(.system(size: 20, weight: .bold))
@@ -66,9 +69,13 @@ struct ModifiedPdfView: View {
                             }
                         }
                         
+                        Toggle("Maintain original layout", isOn: $includeOriginalLayout)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.gray)
+                        
                         Button(action: {
                             if let font = selectedFont {
-                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor){ document in
+                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor, includeOriginalLayout: includeOriginalLayout){ document in
                                     if document != nil{
                                         self.modifiedPdfDocument = document
                                         createTemporaryURL()
@@ -90,7 +97,7 @@ struct ModifiedPdfView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    // 변환된 PDF 미리보기
+                    // Preview converted PDF
                     if let modifiedDocument = self.modifiedPdfDocument {
                         PdfKitView(document: modifiedDocument)
                             .frame(height: 550)
@@ -99,7 +106,6 @@ struct ModifiedPdfView: View {
                             .shadow(radius: 3)
                             .transition(.opacity)
 
-                        // 다운로드 버튼
                         if let url = temporaryURL {
                             ShareLink(item: url) {
                                 Text("Download Converted PDF")
@@ -151,7 +157,7 @@ struct ModifiedPdfView: View {
     }
     
     private func colorName(color: UIColor) -> String {
-        let colorOption =  ColorOption(from: color)
+        let colorOption =  ColorType(from: color)
         return colorOption?.rawValue ?? "Black"
     }
 }

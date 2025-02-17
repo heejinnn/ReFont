@@ -1,9 +1,4 @@
-//
-//  PdfKitView.swift
-//  ReFont
-//
-//  Created by 최희진 on 2/14/25.
-//
+
 import SwiftUI
 import PDFKit
 

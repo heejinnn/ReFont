@@ -21,6 +21,7 @@ class MainViewModel: ObservableObject {
         extractTextFromPDF(document)
     }
     
+    /// Extract text from PDF
     private func extractTextFromPDF(_ document: PDFDocument) {
         extractedElements.removeAll()
         
@@ -48,7 +49,7 @@ class MainViewModel: ObservableObject {
                     }
                 }
             }
-            request.revision = VNRecognizeTextRequestRevision3 // 최신 모델 사용
+            request.revision = VNRecognizeTextRequestRevision3
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
             
@@ -63,9 +64,9 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    func createNewPDFWithModifiedFont(fontName: String, color: UIColor, completion: @escaping (PDFDocument?) -> Void) {
-        
-        guard let document = pdfDocument else {return completion(nil)}
+    /// Create a new PDF
+    func createNewPDFWithModifiedFont(fontName: String, color: UIColor, includeOriginalLayout: Bool, completion: @escaping (PDFDocument?) -> Void) {
+        guard let document = pdfDocument else { return completion(nil) }
         
         let newDocument = PDFDocument()
         
@@ -78,34 +79,11 @@ class MainViewModel: ObservableObject {
             let pdfData = renderer.pdfData { context in
                 context.beginPage()
                 
-                if let pageRef = originalPage.pageRef,
-                   let cgContext = UIGraphicsGetCurrentContext() {
-                    cgContext.saveGState()
-                    cgContext.translateBy(x: 0, y: pageRect.height)
-                    cgContext.scaleBy(x: 1.0, y: -1.0)
-                    cgContext.drawPDFPage(pageRef)
-                    cgContext.restoreGState()
-                }
-                
-                let pageElements = extractedElements.filter { $0.page == pageIndex }
-                for element in pageElements {
-                    let textHeight = element.frame.height
-                    var fontSize = max(textHeight * 0.8, 10)
-                    
-                    fontSize = adjustFontSizeToFit(element, fontName: fontName, fontSize: fontSize)
-                    
-                    let attributedText = NSAttributedString(
-                        string: element.text,
-                        attributes: [
-                            .font: UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
-                            .foregroundColor: color
-                        ]
-                    )
-                    
-                    context.cgContext.setFillColor(UIColor.white.cgColor)
-                    context.cgContext.fill(element.frame)
-                    
-                    attributedText.draw(in: element.frame)
+                if includeOriginalLayout {
+                    drawOriginalPage(originalPage, in: context, with: pageRect)
+                    drawTextWithOriginalLayout(on: context, pageIndex: pageIndex, fontName: fontName, color: color)
+                } else {
+                    drawTextWithoutLayout(on: context, pageIndex: pageIndex, fontName: fontName, color: color, pageRect: pageRect)
                 }
             }
             
@@ -120,6 +98,70 @@ class MainViewModel: ObservableObject {
         completion(PDFDocument(url: outputURL))
     }
     
+    /// Draw on an existing PDF page
+    private func drawOriginalPage(_ page: PDFPage, in context: UIGraphicsPDFRendererContext, with rect: CGRect) {
+        guard let pageRef = page.pageRef, let cgContext = UIGraphicsGetCurrentContext() else { return }
+        
+        cgContext.saveGState()
+        cgContext.translateBy(x: 0, y: rect.height)
+        cgContext.scaleBy(x: 1.0, y: -1.0)
+        cgContext.drawPDFPage(pageRef)
+        cgContext.restoreGState()
+    }
+    
+    /// Apply text while maintaining existing layout
+    private func drawTextWithOriginalLayout(on context: UIGraphicsPDFRendererContext, pageIndex: Int, fontName: String, color: UIColor) {
+        let elements = extractedElements.filter { $0.page == pageIndex }
+        
+        for element in elements {
+            let fontSize = adjustFontSizeToFit(element, fontName: fontName, fontSize: max(element.frame.height * 0.8, 10))
+            
+            let attributedText = NSAttributedString(
+                string: element.text,
+                attributes: [
+                    .font: UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize),
+                    .foregroundColor: color
+                ]
+            )
+            
+            context.cgContext.setFillColor(UIColor.white.cgColor)
+            context.cgContext.fill(element.frame)
+            attributedText.draw(in: element.frame)
+        }
+    }
+    
+    /// List text in new format
+    private func drawTextWithoutLayout(on context: UIGraphicsPDFRendererContext, pageIndex: Int, fontName: String, color: UIColor, pageRect: CGRect) {
+        let elements = extractedElements.filter { $0.page == pageIndex }
+        var yOffset: CGFloat = pageRect.height - 50
+        
+        let lineHeight: CGFloat = 20
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        
+        for element in elements {
+            let attributedText = NSAttributedString(
+                string: element.text,
+                attributes: [
+                    .font: UIFont(name: fontName, size: 16) ?? UIFont.systemFont(ofSize: 16),
+                    .foregroundColor: color,
+                    .paragraphStyle: paragraphStyle
+                ]
+            )
+            
+            let textFrame = CGRect(x: 20, y: yOffset, width: pageRect.width - 40, height: lineHeight)
+            attributedText.draw(in: textFrame)
+            
+            yOffset -= lineHeight
+            
+            if yOffset < 50 {
+                context.beginPage()
+                yOffset = pageRect.height - 50
+            }
+        }
+    }
+    
+    /// Auto adjust font size
     private func adjustFontSizeToFit(_ element: (text: String, frame: CGRect, page: Int), fontName: String, fontSize: CGFloat) -> CGFloat {
         let testString = element.text as NSString
         let testFont = UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
@@ -130,10 +172,6 @@ class MainViewModel: ObservableObject {
             context: nil
         )
         
-        if rect.height > element.frame.height {
-            return fontSize * element.frame.height / rect.height
-        }
-        
-        return fontSize
+        return rect.height > element.frame.height ? fontSize * element.frame.height / rect.height : fontSize
     }
 }

@@ -14,16 +14,16 @@ struct ColorPickerView: View {
             
             ScrollView {
                 VStack {
-                    ForEach(ColorOption.allCases, id: \.self) { colorOption in
+                    ForEach(ColorType.allCases, id: \.self) { type in
                         Button(action: {
-                            selectedColor = colorOption.uiColor
+                            selectedColor = type.uiColor
                             showColorPicker = false
                         }) {
-                            Text(colorOption.rawValue)
+                            Text(type.rawValue)
                                 .font(.system(size: 20))
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .foregroundStyle(Color(uiColor: colorOption.uiColor))
+                                .foregroundStyle(Color(uiColor: type.uiColor))
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
                         }
