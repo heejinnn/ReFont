@@ -1,26 +1,25 @@
-
 import SwiftUI
-import PDFKit
 import Vision
+import UIKit
+import PDFKit
 
 class MainViewModel: ObservableObject {
-    @Published var pdfDocument: PDFDocument?
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
-
-    func loadPDF(from url: URL) {
-        let _ = url.startAccessingSecurityScopedResource()
-        defer { url.stopAccessingSecurityScopedResource() }
-        
-        guard let document = PDFDocument(url: url) else {
-            print("❌ PDF 로드 실패")
-            return
+    @Published var modifiedImage: UIImage? // 수정된 이미지를 저장할 변수
+    @Published var pdfDocument: PDFDocument? // PDF 문서
+    
+    // 문서에서 텍스트 추출 (PDF와 이미지 모두 처리)
+    func extractTextFromDocument(_ document: Any) {
+        if let pdf = document as? PDFDocument {
+            self.pdfDocument = pdf
+            extractTextFromPDF(pdf)
+        } else if let image = document as? UIImage {
+            self.modifiedImage = image
+            extractTextFromImage(image)
         }
-        
-        self.pdfDocument = document
-        extractTextFromPDF(document)
     }
     
-    /// Extract text from PDF
+    // PDF에서 텍스트 추출
     private func extractTextFromPDF(_ document: PDFDocument) {
         extractedElements.removeAll()
         
@@ -63,10 +62,77 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    /// Create a new PDF
-    func createNewPDFWithModifiedFont(fontName: String, color: UIColor, includeOriginalLayout: Bool, completion: @escaping (PDFDocument?) -> Void) {
-        guard let document = pdfDocument else { return completion(nil) }
+    // 이미지에서 텍스트 추출
+    private func extractTextFromImage(_ image: UIImage) {
+        extractedElements.removeAll()
         
+        let pageIndex = 0
+        
+        guard let ciImage = CIImage(image: image) else { return }
+        
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
+            
+            for observation in observations {
+                if let text = observation.topCandidates(1).first?.string {
+                    let boundingBox = observation.boundingBox
+                    let frame = CGRect(
+                        x: boundingBox.origin.x * image.size.width,
+                        y: (1 - boundingBox.origin.y - boundingBox.height) * image.size.height,
+                        width: boundingBox.width * image.size.width,
+                        height: boundingBox.height * image.size.height
+                    )
+                    self.extractedElements.append((text: text, frame: frame, page: pageIndex))
+                }
+            }
+        }
+        
+        request.revision = VNRecognizeTextRequestRevision3
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        
+        request.recognitionLanguages = ["ko-KR", "en-US"]
+        
+        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+        try? handler.perform([request])
+    }
+    
+    // 텍스트 수정 후 PDF 또는 이미지 생성
+    func createModifiedDocument(fontName: String, color: UIColor, includeOriginalLayout: Bool = false, completion: @escaping (Any?) -> Void) {
+        if let pdfDocument = pdfDocument {
+            createModifiedPDF(pdfDocument, fontName: fontName, color: color, includeOriginalLayout: includeOriginalLayout) { document in
+                completion(document) // Return the PDF document
+            }
+        } else if let image = modifiedImage {
+            let pdfDocument = convertImageToPDF(image)
+            createModifiedPDF(pdfDocument, fontName: fontName, color: color, includeOriginalLayout: includeOriginalLayout) { document in
+                completion(document) // Return the PDF document
+            }
+        }
+    }
+    
+    private func convertImageToPDF(_ image: UIImage) -> PDFDocument {
+        let pdfData = NSMutableData()
+        UIGraphicsBeginPDFContextToData(pdfData, CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height), nil)
+        
+        UIGraphicsBeginPDFPage()
+        
+        // Draw the image into the PDF context
+        image.draw(at: CGPoint.zero)
+        
+        UIGraphicsEndPDFContext()
+        
+        // Create a PDFDocument from the generated data
+        guard let document = PDFDocument(data: pdfData as Data) else {
+            print("❌ Failed to create PDF from image")
+            return PDFDocument()
+        }
+        
+        return document
+    }
+    
+    // 수정된 PDF 생성
+    private func createModifiedPDF(_ document: PDFDocument, fontName: String, color: UIColor, includeOriginalLayout: Bool, completion: @escaping (PDFDocument?) -> Void) {
         let newDocument = PDFDocument()
         
         for pageIndex in 0..<document.pageCount {
@@ -92,12 +158,39 @@ class MainViewModel: ObservableObject {
             }
         }
         
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModifiedFont.pdf")
-        newDocument.write(to: outputURL)
-        completion(PDFDocument(url: outputURL))
+        completion(newDocument)
     }
     
-    /// Draw on an existing PDF page
+    // 폰트 크기 자동 조정
+    private func adjustFontSizeToFit(_ element: (text: String, frame: CGRect, page: Int), fontName: String, fontSize: CGFloat) -> CGFloat {
+        let testString = element.text as NSString
+        var minFontSize: CGFloat = 10
+        var maxFontSize: CGFloat = fontSize
+        var bestFontSize: CGFloat = fontSize
+        
+        while minFontSize <= maxFontSize {
+            let currentFontSize = (minFontSize + maxFontSize) / 2
+            let testFont = UIFont(name: fontName, size: currentFontSize) ?? UIFont.systemFont(ofSize: currentFontSize)
+            let rect = testString.boundingRect(
+                with: CGSize(width: element.frame.width, height: CGFloat.greatestFiniteMagnitude),
+                options: .usesLineFragmentOrigin,
+                attributes: [.font: testFont],
+                context: nil
+            )
+            
+            if rect.height > element.frame.height {
+                maxFontSize = currentFontSize - 0.5
+            } else {
+                bestFontSize = currentFontSize
+                minFontSize = currentFontSize + 0.5
+            }
+        }
+        
+        return bestFontSize
+    }
+
+    
+    // 페이지 그대로 그리기 (PDF)
     private func drawOriginalPage(_ page: PDFPage, in context: UIGraphicsPDFRendererContext, with rect: CGRect) {
         guard let pageRef = page.pageRef, let cgContext = UIGraphicsGetCurrentContext() else { return }
         
@@ -108,7 +201,7 @@ class MainViewModel: ObservableObject {
         cgContext.restoreGState()
     }
     
-    /// Apply text while maintaining existing layout
+    // PDF에 텍스트 그리기
     private func drawTextWithOriginalLayout(on context: UIGraphicsPDFRendererContext, pageIndex: Int, fontName: String, color: UIColor) {
         let elements = extractedElements.filter { $0.page == pageIndex }
         
@@ -159,33 +252,5 @@ class MainViewModel: ObservableObject {
             }
         }
     }
-    
-    /// Auto adjust font size
-    private func adjustFontSizeToFit(_ element: (text: String, frame: CGRect, page: Int), fontName: String, fontSize: CGFloat) -> CGFloat {
-        let testString = element.text as NSString
-        var minFontSize: CGFloat = 10
-        var maxFontSize: CGFloat = fontSize
-        var bestFontSize: CGFloat = fontSize
-        
-        while minFontSize <= maxFontSize {
-            let currentFontSize = (minFontSize + maxFontSize) / 2
-            let testFont = UIFont(name: fontName, size: currentFontSize) ?? UIFont.systemFont(ofSize: currentFontSize)
-            let rect = testString.boundingRect(
-                with: CGSize(width: element.frame.width, height: CGFloat.greatestFiniteMagnitude),
-                options: .usesLineFragmentOrigin,
-                attributes: [.font: testFont],
-                context: nil
-            )
-            
-            if rect.height > element.frame.height {
-                maxFontSize = currentFontSize - 0.5
-            } else {
-                bestFontSize = currentFontSize
-                minFontSize = currentFontSize + 0.5
-            }
-        }
-        
-        return bestFontSize
-    }
-
 }
+

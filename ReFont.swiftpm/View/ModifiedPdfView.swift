@@ -10,6 +10,7 @@ struct ModifiedPdfView: View {
     @State private var selectedColor: UIColor = .black
     @State private var temporaryURL: URL? = nil
     @State private var modifiedPdfDocument: PDFDocument?
+    @State private var modifiedImage: UIImage?
     @State private var includeOriginalLayout = true
 
     var body: some View {
@@ -75,10 +76,14 @@ struct ModifiedPdfView: View {
                         
                         Button(action: {
                             if let font = selectedFont {
-                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor, includeOriginalLayout: includeOriginalLayout){ document in
-                                    if document != nil{
+                                viewModel.createModifiedDocument(fontName: font.rawValue, color: selectedColor, includeOriginalLayout: includeOriginalLayout) { result in
+                                    if let document = result as? PDFDocument {
+                                        // If it's a PDF document, store it
                                         self.modifiedPdfDocument = document
                                         createTemporaryURL()
+                                    } else if let image = result as? UIImage {
+                                        // If it's a UIImage, store it
+                                        self.modifiedImage = image
                                     }
                                 }
                             }
@@ -89,7 +94,6 @@ struct ModifiedPdfView: View {
                                 .padding()
                                 .frame(maxWidth: .infinity)
                                 .background(selectedFont == nil ? Color.gray : Color.cyan)
-                            
                                 .cornerRadius(15)
                                 .shadow(radius: 3)
                         }
@@ -119,6 +123,13 @@ struct ModifiedPdfView: View {
                             }
                             .padding(.horizontal, 20)
                         }
+                    }
+                    
+                    if let modifiedImage = self.modifiedImage {
+                        Image(uiImage: modifiedImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 550)
                     }
                 }
                 .padding(.vertical, 20)

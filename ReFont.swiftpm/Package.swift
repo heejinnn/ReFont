@@ -31,6 +31,10 @@ let package = Package(
                 .landscapeRight,
                 .landscapeLeft,
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
+            ],
+            capabilities: [
+                .photoLibrary(purposeString: "PicSweep requires access to a photo library."),
+                .camera(purposeString: "PicSweep requires access to a camera.")
             ]
         )
     ],
