@@ -11,6 +11,7 @@ struct FontPickerView: View {
             Text("Select Font")
                 .font(.headline)
                 .padding()
+                .foregroundStyle(.black)
             
             ScrollView {
                 VStack {
@@ -39,6 +40,7 @@ struct FontPickerView: View {
             .foregroundStyle(.black)
             .padding()
         }
+        .background(Color.white)
         .padding()
         .presentationDetents([.medium, .large])
     }

@@ -9,6 +9,7 @@ struct ModifiedPdfView: View {
     @State private var selectedFont: FontType? = nil
     @State private var selectedColor: UIColor = .black
     @State private var temporaryURL: URL? = nil
+    @State private var modifiedPdfDocument: PDFDocument?
 
     var body: some View {
         VStack {
@@ -16,16 +17,17 @@ struct ModifiedPdfView: View {
                 .font(.title)
                 .fontWeight(.bold)
                 .padding(.vertical, 10)
+                .foregroundStyle(.black)
 
             ScrollView {
                 VStack(spacing: 20) {
                     // 폰트 선택 섹션
                     VStack(alignment: .leading, spacing: 10) {
                         
-                        VStack{
+                        VStack(alignment: .leading){
                             Text("Choose a Font")
                                 .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(.gray)
                             
                             Button(action: { showFontPicker.toggle() }) {
                                 HStack {
@@ -43,10 +45,10 @@ struct ModifiedPdfView: View {
                             }
                         }
                         
-                        VStack{
+                        VStack(alignment: .leading){
                             Text("Choose a Color")
                                 .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(.gray)
                             
                             Button(action: { showColorPicker.toggle() }) {
                                 HStack {
@@ -66,8 +68,12 @@ struct ModifiedPdfView: View {
                         
                         Button(action: {
                             if let font = selectedFont {
-                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor)
-                                createTemporaryURL()
+                                viewModel.createNewPDFWithModifiedFont(fontName: font.rawValue, color: selectedColor){ document in
+                                    if document != nil{
+                                        self.modifiedPdfDocument = document
+                                        createTemporaryURL()
+                                    }
+                                }
                             }
                         }) {
                             Text("Apply Font")
@@ -85,7 +91,7 @@ struct ModifiedPdfView: View {
                     .padding(.horizontal, 20)
 
                     // 변환된 PDF 미리보기
-                    if let modifiedDocument = viewModel.modifiedPdfDocument {
+                    if let modifiedDocument = self.modifiedPdfDocument {
                         PdfKitView(document: modifiedDocument)
                             .frame(height: 550)
                             .padding(.vertical, 10)
@@ -114,20 +120,17 @@ struct ModifiedPdfView: View {
 
             Spacer()
         }
+        .background(Color.white)
         .sheet(isPresented: $showFontPicker) {
             FontPickerView(selectedFont: $selectedFont, showFontPicker: $showFontPicker, fonts: FontType.allCases)
         }
         .sheet(isPresented: $showColorPicker) {
             ColorPickerView(selectedColor: $selectedColor, showColorPicker: $showColorPicker)
         }
-        
-        .onAppear {
-            viewModel.modifiedPdfDocument = nil
-        }
     }
     
     private func createTemporaryURL() {
-        guard let modifiedDocument = viewModel.modifiedPdfDocument,
+        guard let modifiedDocument = self.modifiedPdfDocument,
               let documentData = modifiedDocument.dataRepresentation() else {
             return
         }
@@ -147,7 +150,7 @@ struct ModifiedPdfView: View {
         }
     }
     
-    private func colorName(color: UIColor) -> String{
+    private func colorName(color: UIColor) -> String {
         let colorOption =  ColorOption(from: color)
         return colorOption?.rawValue ?? "Black"
     }

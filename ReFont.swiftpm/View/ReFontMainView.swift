@@ -13,6 +13,7 @@ struct ReFontMainView: View {
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.vertical, 10)
+                    .foregroundStyle(.black)
                 
                 ScrollView{
                     Text("Upload your PDF and choose from a variety of fonts to give your document a fresh look.")
@@ -65,6 +66,7 @@ struct ReFontMainView: View {
                 }
             }
             .padding(.vertical, 20)
+            .background(Color.white)
             .sheet(isPresented: $showDocumentPicker) {
                 DocumentPickerView { url in
                     viewModel.loadPDF(from: url)

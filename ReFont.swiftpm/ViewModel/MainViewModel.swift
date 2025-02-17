@@ -7,7 +7,6 @@ class MainViewModel: ObservableObject {
     @Published var pdfDocument: PDFDocument?
     @Published var pdfURL: URL?
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
-    @Published var modifiedPdfDocument: PDFDocument?
 
     func loadPDF(from url: URL) {
         let _ = url.startAccessingSecurityScopedResource()
@@ -21,20 +20,20 @@ class MainViewModel: ObservableObject {
         self.pdfDocument = document
         extractTextFromPDF(document)
     }
-
+    
     private func extractTextFromPDF(_ document: PDFDocument) {
         extractedElements.removeAll()
-
+        
         for pageIndex in 0..<document.pageCount {
             guard let page = document.page(at: pageIndex) else { continue }
-
+            
             let pageRect = page.bounds(for: .mediaBox)
             let originalSize = CGSize(width: pageRect.width, height: pageRect.height)
             let pageImage = page.thumbnail(of: originalSize, for: .mediaBox)
-
+            
             let request = VNRecognizeTextRequest { request, error in
                 guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
-
+                
                 for observation in observations {
                     if let text = observation.topCandidates(1).first?.string {
                         let boundingBox = observation.boundingBox
@@ -49,9 +48,11 @@ class MainViewModel: ObservableObject {
                     }
                 }
             }
-            request.revision = VNRecognizeTextRequestRevision1//최신 모델 사용
+            request.revision = VNRecognizeTextRequestRevision3 // 최신 모델 사용
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
+            
+            request.recognitionLanguages = ["ko-KR", "en-US"]
             
             do {
                 try VNImageRequestHandler(cgImage: pageImage.cgImage!, options: [:])
@@ -62,9 +63,9 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    func createNewPDFWithModifiedFont(fontName: String, color: UIColor) {
+    func createNewPDFWithModifiedFont(fontName: String, color: UIColor, completion: @escaping (PDFDocument?) -> Void) {
         
-        guard let document = pdfDocument else {return}
+        guard let document = pdfDocument else {return completion(nil)}
         
         let newDocument = PDFDocument()
         
@@ -89,21 +90,9 @@ class MainViewModel: ObservableObject {
                 let pageElements = extractedElements.filter { $0.page == pageIndex }
                 for element in pageElements {
                     let textHeight = element.frame.height
-                    var fontSize = max(textHeight * 0.8, 12)
+                    var fontSize = max(textHeight * 0.8, 10)
                     
-                    // 바운딩 렉트를 사용한 폰트 사이즈 조정
-                    let testString = element.text as NSString
-                    let testFont = UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
-                    let rect = testString.boundingRect(
-                        with: element.frame.size,
-                        options: .usesLineFragmentOrigin,
-                        attributes: [.font: testFont],
-                        context: nil
-                    )
-                    
-                    if rect.height > element.frame.height {
-                        fontSize *= element.frame.height / rect.height
-                    }
+                    fontSize = adjustFontSizeToFit(element, fontName: fontName, fontSize: fontSize)
                     
                     let attributedText = NSAttributedString(
                         string: element.text,
@@ -128,7 +117,23 @@ class MainViewModel: ObservableObject {
         
         let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModifiedFont.pdf")
         newDocument.write(to: outputURL)
+        completion(PDFDocument(url: outputURL))
+    }
+    
+    private func adjustFontSizeToFit(_ element: (text: String, frame: CGRect, page: Int), fontName: String, fontSize: CGFloat) -> CGFloat {
+        let testString = element.text as NSString
+        let testFont = UIFont(name: fontName, size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
+        let rect = testString.boundingRect(
+            with: element.frame.size,
+            options: .usesLineFragmentOrigin,
+            attributes: [.font: testFont],
+            context: nil
+        )
         
-        self.modifiedPdfDocument = PDFDocument(url: outputURL)
+        if rect.height > element.frame.height {
+            return fontSize * element.frame.height / rect.height
+        }
+        
+        return fontSize
     }
 }

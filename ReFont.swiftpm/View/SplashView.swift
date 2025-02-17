@@ -36,6 +36,7 @@ struct SplashView: View {
                     .animation(.easeOut(duration: 1.2), value: isAnimating)
             }
         }
+        .background(Color.white)
         .onAppear {
             isAnimating = true
         }

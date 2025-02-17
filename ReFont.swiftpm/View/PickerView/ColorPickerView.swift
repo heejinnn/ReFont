@@ -10,6 +10,7 @@ struct ColorPickerView: View {
             Text("Select Color")
                 .font(.headline)
                 .padding()
+                .foregroundStyle(.black)
             
             ScrollView {
                 VStack {
@@ -38,6 +39,7 @@ struct ColorPickerView: View {
             .foregroundStyle(.black)
             .padding()
         }
+        .background(Color.white)
         .padding()
         .presentationDetents([.medium, .large])
     }
