@@ -73,7 +73,7 @@ struct ReFontMainView: View {
                     .padding(.horizontal, 20)
 
                     if isLoading{
-                        ProgressView("Loading File...")
+                        ProgressView("Loading Document...")
                             .progressViewStyle(CircularProgressViewStyle())
                             .foregroundStyle(.gray)
                             .padding()
@@ -127,7 +127,7 @@ struct ReFontMainView: View {
                 )
             }
             .sheet(isPresented: $showSourceSelection) {
-                ImagePickerController(sourceType: selectedSourceType) { selectedImage in
+                ImagePickerView(sourceType: selectedSourceType) { selectedImage in
                     showImagePicker = false
                     self.selectedImage = selectedImage
                     viewModel.extractTextFromDocument(selectedImage)
@@ -137,13 +137,13 @@ struct ReFontMainView: View {
     }
     
     private var ConvertedDocumentButton: some View{
-        NavigationLink(destination: ModifiedPdfView(viewModel: viewModel)) {
+        NavigationLink(destination: ModifiedDocumentView(viewModel: viewModel)) {
             Text("View Converted Document →")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.cyan)
+                .background(Color.blue)
                 .cornerRadius(15)
                 .shadow(radius: 3)
             

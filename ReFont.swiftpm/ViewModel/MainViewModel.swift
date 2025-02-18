@@ -1,6 +1,5 @@
 import SwiftUI
 import Vision
-import UIKit
 import PDFKit
 
 class MainViewModel: ObservableObject {
@@ -15,9 +14,9 @@ class MainViewModel: ObservableObject {
             defer { url.stopAccessingSecurityScopedResource() }
             
             guard let pdf = PDFDocument(url: url) else {
-                print("❌ PDF 로드 실패")
+                print("❌ PDF load failure")
                 return
-            }           
+            }
             self.pdfDocument = pdf
             extractTextFromPDF(pdf)
         } else if let image = document as? UIImage {
@@ -88,7 +87,7 @@ extension MainViewModel{
                 try VNImageRequestHandler(cgImage: pageImage.cgImage!, options: [:])
                     .perform([request])
             } catch {
-                print("❌ 텍스트 인식 실패: \(error)")
+                print("❌ Text recognition failure: \(error)")
             }
         }
     }
@@ -133,15 +132,15 @@ extension MainViewModel{
         
         let pageRect = page.bounds(for: .mediaBox)
         let renderer = UIGraphicsImageRenderer(size: pageRect.size)
-
+        
         let image = renderer.image { ctx in
             let context = ctx.cgContext
-
+            
             UIColor.white.set()
             context.fill(CGRect(origin: .zero, size: pageRect.size))
             
-            context.translateBy(x: 0, y: pageRect.height) 
-                    context.scaleBy(x: 1, y: -1)
+            context.translateBy(x: 0, y: pageRect.height)
+            context.scaleBy(x: 1, y: -1)
             page.draw(with: .mediaBox, to: context)
         }
         
@@ -259,12 +258,12 @@ extension MainViewModel{
     /// List text in new format
     private func drawTextWithoutLayout(on context: UIGraphicsPDFRendererContext, pageIndex: Int, fontName: String, color: UIColor, pageRect: CGRect) {
         let elements = extractedElements.filter { $0.page == pageIndex }
-        var yOffset: CGFloat = pageRect.height - 50
-        
+        var yOffset: CGFloat = 50
+
         let lineHeight: CGFloat = 20
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .left
-        
+
         for element in elements {
             let attributedText = NSAttributedString(
                 string: element.text,
@@ -274,15 +273,15 @@ extension MainViewModel{
                     .paragraphStyle: paragraphStyle
                 ]
             )
-            
+
             let textFrame = CGRect(x: 20, y: yOffset, width: pageRect.width - 40, height: lineHeight)
             attributedText.draw(in: textFrame)
-            
-            yOffset -= lineHeight
-            
-            if yOffset < 50 {
+
+            yOffset += lineHeight
+
+            if yOffset + lineHeight > pageRect.height - 50 {
                 context.beginPage()
-                yOffset = pageRect.height - 50
+                yOffset = 50
             }
         }
     }

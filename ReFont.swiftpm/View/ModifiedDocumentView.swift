@@ -1,7 +1,7 @@
 import SwiftUI
 import PDFKit
 
-struct ModifiedPdfView: View {
+struct ModifiedDocumentView: View {
     @ObservedObject var viewModel: MainViewModel
     @State private var showFontPicker = false
     @State private var showColorPicker = false
@@ -115,7 +115,7 @@ struct ModifiedPdfView: View {
                                     .foregroundStyle(.white)
                                     .padding()
                                     .frame(maxWidth: .infinity)
-                                    .background(Color.cyan)
+                                    .background(Color.blue)
                                     .cornerRadius(15)
                                     .shadow(radius: 3)
                             }
