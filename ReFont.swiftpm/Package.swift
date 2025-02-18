@@ -34,7 +34,8 @@ let package = Package(
             ],
             capabilities: [
                 .photoLibrary(purposeString: "PicSweep requires access to a photo library."),
-                .camera(purposeString: "PicSweep requires access to a camera.")
+                .camera(purposeString: "PicSweep requires access to a camera."),
+                .photoLibraryAdd(purposeString: "PicSweep requires access to a photo library.")
             ]
         )
     ],

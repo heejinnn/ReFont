@@ -14,7 +14,7 @@ struct ReFontMainView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 10) {
-                Text("Transform Your Document Fonts")
+                Text("Transform Document Fonts")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.vertical, 10)
@@ -31,6 +31,7 @@ struct ReFontMainView: View {
                         showDocumentPicker = true
                         isLoading = true
                         selectedImage = nil
+                        viewModel.imageDocument = nil
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                             withAnimation {
@@ -84,19 +85,7 @@ struct ReFontMainView: View {
                                 .padding(.horizontal, 10)
                                 .shadow(radius: 3)
                             
-                            NavigationLink(destination: ModifiedPdfView(viewModel: viewModel)) {
-                                Text("View Converted File →")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.cyan)
-                                    .cornerRadius(15)
-                                    .shadow(radius: 3)
-                                
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 10)
+                            ConvertedDocumentButton
                         }
                         
                         if let selectedImage = selectedImage {
@@ -104,20 +93,12 @@ struct ReFontMainView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(height: 550)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 10)
+                                .shadow(radius: 3)
                             
-                            NavigationLink(destination: ModifiedPdfView(viewModel: viewModel)) {
-                                Text("View Converted File →")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.cyan)
-                                    .cornerRadius(15)
-                                    .shadow(radius: 3)
-                                
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 10)
+                            
+                            ConvertedDocumentButton
                         }
                     }
                 }
@@ -153,6 +134,22 @@ struct ReFontMainView: View {
                 }
             }
         }
+    }
+    
+    private var ConvertedDocumentButton: some View{
+        NavigationLink(destination: ModifiedPdfView(viewModel: viewModel)) {
+            Text("View Converted Document →")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.cyan)
+                .cornerRadius(15)
+                .shadow(radius: 3)
+            
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 10)
     }
 }
 
