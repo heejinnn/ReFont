@@ -54,7 +54,6 @@ struct TextScannerView: UIViewControllerRepresentable {
         func processItemsManually(_ item: RecognizedItem) {
 
             guard case let .text(value) = item else {
-                print("❌ No text recognized manually")
                 return
             }
             

@@ -7,7 +7,7 @@ struct ReFontMainView: View {
     @State private var showDocumentPicker = false
     @State private var showImagePicker = false
     @State private var isLoading = false
-    @State private var selectedImage: UIImage?
+    @State private var selectedImage: [UIImage]?
     @State private var showTextScanner = false
     @State private var showDocumentScanner = false
     
@@ -102,19 +102,6 @@ struct ReFontMainView: View {
                             .padding(.vertical, 10)
                             .padding(.horizontal, 10)
                             .shadow(radius: 3)
-                            
-                            ConvertedDocumentButton
-                        }
-                        
-                        if let selectedImage = selectedImage {
-                            Image(uiImage: selectedImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 550)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 10)
-                                .shadow(radius: 3)
-                            
                             
                             ConvertedDocumentButton
                         }

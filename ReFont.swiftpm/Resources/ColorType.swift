@@ -3,24 +3,38 @@ import SwiftUI
 
 enum ColorType: String, CaseIterable {
     case black = "Black"
-    case blue = "Blue"
-    case cyan = "Cyan"
-    case yellow = "Yellow"
     case red = "Red"
+    case orange = "Orange"
+    case yellow = "Yellow"
+    case green = "Green"
+    case blue = "Blue"
+    case indigo = "Indigo"
+    case purple = "Purple"
+    case white = "White"
     case gray = "Gray"
     case brown = "Brown"
-    case orange = "Orange"
-
+    case pink = "Pink"
+    case cyan = "Cyan"
+    case lightGray = "Light Gray"
+    case darkGray = "Dark Gray"
+    
     var uiColor: UIColor {
         switch self {
         case .black: return .black
-        case .blue: return .blue
-        case .cyan: return .cyan
-        case .yellow: return .yellow
         case .red: return .red
+        case .orange: return .orange
+        case .yellow: return .yellow
+        case .green: return .green
+        case .blue: return .blue
+        case .indigo: return .systemIndigo
+        case .purple: return .purple
+        case .white: return .white
         case .gray: return .gray
         case .brown: return .brown
-        case .orange: return .orange
+        case .pink: return .systemPink
+        case .cyan: return .cyan
+        case .lightGray: return .lightGray
+        case .darkGray: return .darkGray
         }
     }
 

@@ -5,7 +5,7 @@ import PDFKit
 class MainViewModel: ObservableObject {
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
     @Published var extractedText: String?
-    @Published var imageDocument: UIImage?
+    @Published var imageDocument: [UIImage]?
     @Published var pdfDocument: PDFDocument?
     
     // Extract text from documents (processes both PDFs and images)
@@ -20,9 +20,10 @@ class MainViewModel: ObservableObject {
             }
             self.pdfDocument = pdf
             extractTextFromPDF(pdf)
-        } else if let image = document as? UIImage {
-            self.imageDocument = image
-            extractTextFromImage(image)
+        } else if let image = document as? [UIImage] {
+            let pdf = convertImagesToPDF(image)
+            self.pdfDocument = pdf
+            extractTextFromPDF(pdf)
         } else if let text = document as? String {
             self.extractedText = text
         }
@@ -30,11 +31,6 @@ class MainViewModel: ObservableObject {
     
     func createModifiedDocument(fontName: String, color: UIColor, includeOriginalLayout: Bool = false, completion: @escaping (Any?) -> Void) {
         if let pdfDocument = pdfDocument {
-            createModifiedPDF(pdfDocument, fontName: fontName, color: color, includeOriginalLayout: includeOriginalLayout) { document in
-                completion(document)
-            }
-        } else if let image = imageDocument {
-            let pdfDocument = convertImageToPDF(image)
             createModifiedPDF(pdfDocument, fontName: fontName, color: color, includeOriginalLayout: includeOriginalLayout) { document in
                 completion(document)
             }
@@ -92,73 +88,24 @@ extension MainViewModel{
         }
     }
     
-    // Extract text from image
-    private func extractTextFromImage(_ image: UIImage) {
-        extractedElements.removeAll()
-        
-        let pageIndex = 0
-        
-        guard let ciImage = CIImage(image: image) else { return }
-        
-        let request = VNRecognizeTextRequest { request, error in
-            guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
-            
-            for observation in observations {
-                if let text = observation.topCandidates(1).first?.string {
-                    let boundingBox = observation.boundingBox
-                    let frame = CGRect(
-                        x: boundingBox.origin.x * image.size.width,
-                        y: (1 - boundingBox.origin.y - boundingBox.height) * image.size.height,
-                        width: boundingBox.width * image.size.width,
-                        height: boundingBox.height * image.size.height
-                    )
-                    self.extractedElements.append((text: text, frame: frame, page: pageIndex))
-                }
-            }
-        }
-        
-        request.revision = VNRecognizeTextRequestRevision3
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        
-        request.recognitionLanguages = ["ko-KR", "en-US"]
-        
-        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
-        try? handler.perform([request])
-    }
-    
-    private func convertPDFToImage(_ pdfDocument: PDFDocument) -> UIImage? {
-        guard let page = pdfDocument.page(at: 0) else { return nil }
-        
-        let pageRect = page.bounds(for: .mediaBox)
-        let renderer = UIGraphicsImageRenderer(size: pageRect.size)
-        
-        let image = renderer.image { ctx in
-            let context = ctx.cgContext
-            
-            UIColor.white.set()
-            context.fill(CGRect(origin: .zero, size: pageRect.size))
-            
-            context.translateBy(x: 0, y: pageRect.height)
-            context.scaleBy(x: 1, y: -1)
-            page.draw(with: .mediaBox, to: context)
-        }
-        
-        return image
-    }
-
-    
-    private func convertImageToPDF(_ image: UIImage) -> PDFDocument {
+    private func convertImagesToPDF(_ images: [UIImage]) -> PDFDocument {
         let pdfData = NSMutableData()
-        UIGraphicsBeginPDFContextToData(pdfData, CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height), nil)
         
-        UIGraphicsBeginPDFPage()
-        image.draw(at: CGPoint.zero)
+        guard let firstImage = images.first else {
+            return PDFDocument()
+        }
         
+        UIGraphicsBeginPDFContextToData(pdfData, CGRect(x: 0, y: 0, width: firstImage.size.width, height: firstImage.size.height), nil)
+        
+        for image in images {
+            UIGraphicsBeginPDFPage()
+            image.draw(at: CGPoint.zero)
+        }
+
         UIGraphicsEndPDFContext()
-        
+
         guard let document = PDFDocument(data: pdfData as Data) else {
-            print("❌ Failed to create PDF from image")
+            print("❌ Create PDF failure")
             return PDFDocument()
         }
         
