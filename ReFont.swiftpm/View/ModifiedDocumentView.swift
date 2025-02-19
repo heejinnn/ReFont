@@ -9,10 +9,7 @@ struct ModifiedDocumentView: View {
     @State private var selectedColor: UIColor = .black
     @State private var temporaryURL: URL? = nil
     @State private var modifiedPdfDocument: PDFDocument?
-    @State private var modifiedImage: UIImage?
     @State private var includeOriginalLayout = true
-    @State private var showSaveImageAlert = false
-    @State private var saveImageSuccess = false
 
     var body: some View {
         VStack {
@@ -81,8 +78,6 @@ struct ModifiedDocumentView: View {
                                     if let document = result as? PDFDocument {
                                         self.modifiedPdfDocument = document
                                         createTemporaryURL()
-                                    } else if let image = result as? UIImage {
-                                        self.modifiedImage = image
                                     }
                                 }
                             }
@@ -122,30 +117,6 @@ struct ModifiedDocumentView: View {
                             .padding(.horizontal, 20)
                         }
                     }
-                    
-                    if let modifiedImage = self.modifiedImage {
-                        VStack {
-                            Image(uiImage: modifiedImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 550)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 10)
-                                .shadow(radius: 3)
-
-                            Button(action: saveImageToGallery) {
-                                Text("Download Converted Image")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.blue)
-                                    .cornerRadius(15)
-                                    .shadow(radius: 3)
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                    }
                 }
                 .padding(.vertical, 20)
             }
@@ -158,13 +129,6 @@ struct ModifiedDocumentView: View {
         }
         .sheet(isPresented: $showColorPicker) {
             ColorPickerView(selectedColor: $selectedColor, showColorPicker: $showColorPicker)
-        }
-        .alert(isPresented: $showSaveImageAlert) {
-            Alert(
-                title: Text(saveImageSuccess ? "Success!" : "Error"),
-                message: Text(saveImageSuccess ? "Image saved successfully." : "Failed to save image."),
-                dismissButton: .default(Text("OK"))
-            )
         }
     }
     
@@ -192,14 +156,6 @@ struct ModifiedDocumentView: View {
     private func colorName(color: UIColor) -> String {
         let colorOption =  ColorType(from: color)
         return colorOption?.rawValue ?? "Black"
-    }
-
-    private func saveImageToGallery() {
-        guard let image = modifiedImage else { return }
-        
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-        saveImageSuccess = true
-        showSaveImageAlert = true
     }
 }
 

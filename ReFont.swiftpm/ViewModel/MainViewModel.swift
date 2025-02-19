@@ -4,6 +4,7 @@ import PDFKit
 
 class MainViewModel: ObservableObject {
     @Published var extractedElements: [(text: String, frame: CGRect, page: Int)] = []
+    @Published var extractedText: String?
     @Published var imageDocument: UIImage?
     @Published var pdfDocument: PDFDocument?
     
@@ -22,6 +23,8 @@ class MainViewModel: ObservableObject {
         } else if let image = document as? UIImage {
             self.imageDocument = image
             extractTextFromImage(image)
+        } else if let text = document as? String {
+            self.extractedText = text
         }
     }
     
@@ -33,16 +36,13 @@ class MainViewModel: ObservableObject {
         } else if let image = imageDocument {
             let pdfDocument = convertImageToPDF(image)
             createModifiedPDF(pdfDocument, fontName: fontName, color: color, includeOriginalLayout: includeOriginalLayout) { document in
-                if let modifiedPDF = document,
-                   let convertedImage = self.convertPDFToImage(modifiedPDF) {
-                    completion(convertedImage)
-                } else {
-                    completion(nil)
-                }
+                completion(document)
             }
+        } else if let text = extractedText{
+            let newPDF = createTextPDF(text: text, fontName: fontName, color: color)
+            completion(newPDF)
         }
     }
- 
 }
 
 // MARK: Private Methods
@@ -163,6 +163,31 @@ extension MainViewModel{
         }
         
         return document
+    }
+    
+    private func createTextPDF(text: String, fontName: String, color: UIColor) -> PDFDocument {
+        let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
+        
+        let pdfData = renderer.pdfData { context in
+            context.beginPage()
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .left
+            
+            let attributedText = NSAttributedString(
+                string: text,
+                attributes: [
+                    .font: UIFont(name: fontName, size: 16) ?? UIFont.systemFont(ofSize: 16),
+                    .foregroundColor: color,
+                    .paragraphStyle: paragraphStyle
+                ]
+            )
+            
+            let textFrame = CGRect(x: 20, y: 50, width: pageRect.width - 40, height: pageRect.height - 100)
+            attributedText.draw(in: textFrame)
+        }
+        
+        return PDFDocument(data: pdfData)!
     }
     
     // Create a modified PDF

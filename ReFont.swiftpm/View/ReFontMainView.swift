@@ -8,8 +8,8 @@ struct ReFontMainView: View {
     @State private var showImagePicker = false
     @State private var isLoading = false
     @State private var selectedImage: UIImage?
-    @State private var showSourceSelection = false
-    @State private var selectedSourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showTextScanner = false
+    @State private var showDocumentScanner = false
     
     var body: some View {
         NavigationStack {
@@ -61,7 +61,7 @@ struct ReFontMainView: View {
                             }
                         }
                     }) {
-                        Label("Upload Your Image", systemImage: "square.and.arrow.up")
+                        Label("Scan Document & Text", systemImage: "camera.viewfinder")
                             .font(.system(size: 16, weight: .semibold))
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -73,7 +73,7 @@ struct ReFontMainView: View {
                     .padding(.horizontal, 20)
 
                     if isLoading{
-                        ProgressView("Loading Document...")
+                        ProgressView("Loading...")
                             .progressViewStyle(CircularProgressViewStyle())
                             .foregroundStyle(.gray)
                             .padding()
@@ -84,6 +84,24 @@ struct ReFontMainView: View {
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 10)
                                 .shadow(radius: 3)
+                            
+                            ConvertedDocumentButton
+                        }
+                        
+                        if let text = viewModel.extractedText {
+                            
+                            HStack{
+                                Text(text)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.black)
+                                    .padding()
+                            }
+                            .frame(height: 550)
+                            .frame(maxWidth: .infinity)
+                            .border(.gray)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 10)
+                            .shadow(radius: 3)
                             
                             ConvertedDocumentButton
                         }
@@ -114,24 +132,48 @@ struct ReFontMainView: View {
                 ActionSheet(
                     title: Text("Choose an option"),
                     buttons: [
-                        .default(Text("Photo Library")) {
-                            selectedSourceType = .photoLibrary
-                            showSourceSelection = true
+                        .default(Text("Scan Document")) {
+                            showDocumentScanner = true
                         },
-                        .default(Text("Camera")) {
-                            selectedSourceType = .camera
-                            showSourceSelection = true
+                        .default(Text("Scan Text")) {
+                            showTextScanner = true
                         },
                         .cancel()
                     ]
                 )
             }
-            .sheet(isPresented: $showSourceSelection) {
-                ImagePickerView(sourceType: selectedSourceType) { selectedImage in
-                    showImagePicker = false
-                    self.selectedImage = selectedImage
-                    viewModel.extractTextFromDocument(selectedImage)
+            .sheet(isPresented: $showTextScanner) {
+                
+                VStack{
+                    TextScannerView(
+                        didFinishScanning: { scannedText in
+                            showTextScanner = false
+                            viewModel.extractedText = scannedText
+                        },
+                        didCancelScanning: {
+                            showTextScanner = false
+                        }
+                    )
+                    
+                    Text("Touch the text you want to scan")
+                        .font(.system(size: 16, weight: .semibold))
+                        .padding()
+                        .background(Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                 }
+            }
+            .sheet(isPresented: $showDocumentScanner) {
+                DocumentScannerView(
+                    didFinishScanning: { scannedImage in
+                        showDocumentScanner = false
+                        self.selectedImage = scannedImage
+                        viewModel.extractTextFromDocument(scannedImage)
+                    },
+                    didCancelScanning: {
+                        showDocumentScanner = false
+                    }
+                )
             }
         }
     }
