@@ -5,11 +5,11 @@ import Vision
 struct ReFontMainView: View {
     @StateObject private var viewModel = MainViewModel()
     @State private var showDocumentPicker = false
-    @State private var showImagePicker = false
     @State private var isLoading = false
     @State private var selectedImage: [UIImage]?
     @State private var showTextScanner = false
     @State private var showDocumentScanner = false
+    @State private var showBottomSheet = false
     
     var body: some View {
         NavigationStack {
@@ -51,7 +51,7 @@ struct ReFontMainView: View {
                     .padding(.horizontal, 20)
                     
                     Button(action: {
-                        showImagePicker = true
+                        showBottomSheet = true
                         isLoading = true
                         viewModel.pdfDocument = nil
                         
@@ -115,20 +115,19 @@ struct ReFontMainView: View {
                     viewModel.extractTextFromDocument(url)
                 }
             }
-            .actionSheet(isPresented: $showImagePicker) {
-                ActionSheet(
-                    title: Text("Choose an option"),
-                    buttons: [
-                        .default(Text("Scan Document")) {
+            .overlay(
+                BottomSheetView(
+                    isPresented: $showBottomSheet,
+                    actions: [
+                        ActionSheetButton(title: "Scan Document") {
                             showDocumentScanner = true
                         },
-                        .default(Text("Scan Text")) {
+                        ActionSheetButton(title: "Scan Text") {
                             showTextScanner = true
-                        },
-                        .cancel()
+                        }
                     ]
                 )
-            }
+            )
             .sheet(isPresented: $showTextScanner) {
                 
                 VStack{
