@@ -22,10 +22,10 @@ ReFont allows users to effortlessly modify text styles within PDFs and scanned d
 
 <br/>
 
-<img src = "https://github.com/user-attachments/assets/bef60ee8-246b-4951-9073-2e632edb0e08" width = "230"/>
-<img src = "https://github.com/user-attachments/assets/207d8fbd-0d26-43d9-97ee-41b36aa65491" width = "230"/>
-<img src = "https://github.com/user-attachments/assets/6cf0048a-cf9a-4494-8cc5-140192027709" width = "230"/>
-<img src = "https://github.com/user-attachments/assets/a1f82003-cd1a-43a1-8f4f-3c1ecf203547" width = "230"/>
+| <img src = "https://github.com/user-attachments/assets/bef60ee8-246b-4951-9073-2e632edb0e08" width = "230"/>| <img src = "https://github.com/user-attachments/assets/207d8fbd-0d26-43d9-97ee-41b36aa65491" width = "230"/> |
+|--------------------------------|--------------------------------|
+| <img src = "https://github.com/user-attachments/assets/6cf0048a-cf9a-4494-8cc5-140192027709" width = "230"/> | <img src = "https://github.com/user-attachments/assets/a1f82003-cd1a-43a1-8f4f-3c1ecf203547" width = "230"/> |
+
 
 <br/>
 
