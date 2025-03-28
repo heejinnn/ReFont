@@ -1,5 +1,10 @@
 # ReFont
 
+🎉🎉🎉
+<br/>
+<img src = "https://github.com/user-attachments/assets/3f324bec-4f67-4657-8e0f-b66590afe1c0" width = "400"/>
+
+
 ### Swift Student Challenge Submission
 
 Refont is an app designed to easily and intuitively modify text within PDFs or scanned documents. The core goal of this app is to make it easy for users to modify text with the font and color they want without going through a complicated process. In particular, it has optimized the user experience by implementing the converted document to be immediately downloaded while maintaining the original layout. Refont is very useful for users who want to apply the desired style while keeping their written documents or files in a clean format.
