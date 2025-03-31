@@ -2,8 +2,7 @@
 
 🎉🎉🎉
 <br/>
-<img src = "https://github.com/user-attachments/assets/3f324bec-4f67-4657-8e0f-b66590afe1c0" width = "400"/>
-
+![SSC2025_16x9](https://github.com/user-attachments/assets/73486521-cd2f-41fa-be91-c3a0a1239ffc)
 
 ### Swift Student Challenge Submission
 
